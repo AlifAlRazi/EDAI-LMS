@@ -1,7 +1,8 @@
 import { requireAuth, getCurrentUser } from "@/lib/auth";
-import { Brain, User as UserIcon, LogOut } from "lucide-react";
+import { Brain } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import UserMenu from "@/components/dashboard/UserMenu";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   await requireAuth();
@@ -26,15 +27,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Link href="/courses" className="text-sm font-medium text-white/60 hover:text-white transition-colors">
               Browse Courses
             </Link>
+            <Link href="/dashboard/progress" className="text-sm font-medium text-white/60 hover:text-white transition-colors">
+              My Progress
+            </Link>
           </nav>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex flex-col items-end">
-            <span className="text-sm font-medium text-white">{user?.name}</span>
-            <span className="text-xs text-white/50 capitalize">{user?.role}</span>
-          </div>
-          
           {user?.role === "admin" && (
             <Link href="/admin">
               <Button variant="outline" size="sm" className="border-accent-500/50 text-accent-400 bg-accent-500/10 hover:bg-accent-500/20">
@@ -43,9 +42,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </Link>
           )}
 
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-white font-bold group cursor-pointer relative">
-            {user?.name?.[0] || <UserIcon className="w-5 h-5" />}
-          </div>
+          {/* Real user avatar + sign-out dropdown */}
+          <UserMenu
+            name={user?.name}
+            email={user?.email}
+            image={user?.image}
+            role={user?.role}
+          />
         </div>
       </header>
 

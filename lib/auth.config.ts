@@ -1,46 +1,15 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
-import { MongoClient } from "mongodb";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 
-// ─── Singleton MongoClient for the adapter ────────────────────────────────────
-
-const uri = process.env.MONGODB_URI!;
-
-declare global {
-  // eslint-disable-next-line no-var
-  var _mongoClientPromise: Promise<MongoClient> | undefined;
-}
-
-let clientPromise: Promise<MongoClient>;
-
-if (!uri) {
-  // In build time (no MONGODB_URI), create a placeholder
-  clientPromise = Promise.resolve(null as unknown as MongoClient);
-} else if (process.env.NODE_ENV === "development") {
-  if (!global._mongoClientPromise) {
-    const client = new MongoClient(uri);
-    global._mongoClientPromise = client.connect();
-  }
-  clientPromise = global._mongoClientPromise;
-} else {
-  const client = new MongoClient(uri);
-  clientPromise = client.connect();
-}
-
-// ─── Exported authOptions ─────────────────────────────────────────────────────
-
 /**
- * NextAuth configuration options.
- * Exported from lib/ (not the route file) so it can be imported
- * by getServerSession() calls throughout the app without causing
- * Next.js route-file type conflicts.
+ * NextAuth configuration using JWT strategy.
+ * No MongoDB adapter — user data is stored in our custom User model
+ * and baked into the JWT token on every sign-in.
  */
 export const authOptions: NextAuthOptions = {
-  adapter: MongoDBAdapter(clientPromise),
-
+  // No adapter — we manage User documents ourselves
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
@@ -56,9 +25,9 @@ export const authOptions: NextAuthOptions = {
   ],
 
   session: {
-    strategy: "database",
-    maxAge: 30 * 24 * 60 * 60,
-    updateAge: 24 * 60 * 60,
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,   // 30 days
+    updateAge: 24 * 60 * 60,      // re-issue every 24h
   },
 
   pages: {
@@ -67,43 +36,14 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    async session({ session, user }) {
-      if (session.user && user) {
-        session.user.id = user.id;
-        try {
-          await connectDB();
-          const dbUser = await User.findById(user.id).select("role").lean();
-          session.user.role = (dbUser as { role?: string })?.role as "student" | "instructor" | "admin" ?? "student";
-        } catch {
-          session.user.role = "student";
-        }
-      }
-      return session;
-    },
-
-    async signIn({ user, account }) {
-      if (account?.provider === "google") {
-        try {
-          await connectDB();
-          await User.findOneAndUpdate(
-            { email: user.email },
-            { $setOnInsert: { role: "student" } },
-            { upsert: true, new: true, runValidators: false }
-          );
-          return true;
-        } catch {
-          return false;
-        }
-      }
-      return true;
-    },
-  },
-
-  events: {
-    async createUser({ user }) {
+    /**
+     * Runs on every sign-in. Upserts the user document so we always
+     * have a record in our own User collection.
+     */
+    async signIn({ user }) {
       try {
         await connectDB();
-        await User.findOneAndUpdate(
+        const result = await User.findOneAndUpdate(
           { email: user.email },
           {
             $setOnInsert: {
@@ -112,14 +52,69 @@ export const authOptions: NextAuthOptions = {
               image: user.image ?? null,
               role: "student",
               enrolledCourses: [],
-              learnerProfile: { completedNodes: [], weakNodes: [], strongNodes: [] },
+              learnerProfile: {
+                completedNodes: [],
+                weakNodes: [],
+                strongNodes: [],
+              },
             },
           },
-          { upsert: true, new: true, runValidators: false }
+          { upsert: true, new: false, runValidators: false } // new:false → returns null if inserted new
         );
-      } catch (error) {
-        console.error("Error creating User document:", error);
+
+        // If result is null, it means a new user was just created → send welcome email
+        if (!result) {
+          // Fire-and-forget, don't block sign-in
+          import("@/lib/email").then(({ sendWelcomeEmail }) => {
+            sendWelcomeEmail({ name: user.name, email: user.email }).catch(console.error);
+          });
+        }
+
+        return true;
+      } catch (err) {
+        console.error("[SIGNIN_ERROR]", err);
+        return false;
       }
+    },
+
+
+    /**
+     * On first sign-in, fetch the user's _id and role from MongoDB
+     * and bake them into the JWT so they're available on every request.
+     */
+    async jwt({ token, user }) {
+      if (user) {
+        // user is populated on first sign-in only
+        try {
+          await connectDB();
+          const dbUser = await User.findOne({ email: user.email })
+            .select("_id role image name")
+            .lean() as any;
+          token.id    = dbUser?._id?.toString() ?? user.id;
+          token.role  = dbUser?.role ?? "student";
+          token.image = dbUser?.image ?? user.image;
+          token.name  = dbUser?.name ?? user.name;
+        } catch {
+          token.id   = user.id;
+          token.role = "student";
+        }
+      }
+      return token;
+    },
+
+    /**
+     * Expose the JWT fields to the session object so client
+     * and server components can read them via useSession / getSession.
+     */
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id    = token.id as string;
+        session.user.role  = token.role as "student" | "instructor" | "admin";
+        if (token.name)  session.user.name  = token.name  as string;
+        if (token.email) session.user.email = token.email as string;
+        if (token.image) session.user.image = token.image as string;
+      }
+      return session;
     },
   },
 

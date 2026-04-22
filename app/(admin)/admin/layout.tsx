@@ -2,13 +2,15 @@ import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireAdmin, getCurrentUser } from "@/lib/auth";
-import { LayoutDashboard, BookOpen, Users, Settings, Brain, LogOut } from "lucide-react";
+import { LayoutDashboard, BookOpen, Users, Settings, Brain, LogOut, BarChart3 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/courses", label: "Courses", icon: BookOpen },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

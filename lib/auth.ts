@@ -6,22 +6,9 @@ import type { UserRole } from "@/types";
 /**
  * Returns the current server-side session.
  * Wraps getServerSession with our authOptions for convenience.
- *
- * @example
- * const session = await getSession();
- * console.log(session?.user.role);
  */
 export async function getSession() {
-  // return getServerSession(authOptions);
-  // TEMPORARY BYPASS: Returning a mock session so you can see the dashboard UI
-  return {
-    user: {
-      id: "60d5f2f1f1d1f1d1f1d1f1d1", // Valid 24-char hex ObjectId
-      name: "Demo Student",
-      email: "student@edai.com",
-      role: "student" as any,
-    }
-  };
+  return getServerSession(authOptions);
 }
 
 /**
@@ -36,8 +23,6 @@ export async function getCurrentUser() {
 /**
  * Requires the user to be authenticated.
  * Redirects to /login if not authenticated.
- *
- * @param callbackUrl - URL to redirect to after login
  */
 export async function requireAuth(callbackUrl?: string) {
   const session = await getSession();
@@ -50,8 +35,6 @@ export async function requireAuth(callbackUrl?: string) {
 /**
  * Requires the user to have a specific role.
  * Redirects to /dashboard if role doesn't match.
- *
- * @param role - Required role
  */
 export async function requireRole(role: UserRole) {
   const session = await requireAuth();
@@ -63,7 +46,6 @@ export async function requireRole(role: UserRole) {
 
 /**
  * Requires admin role.
- * Convenience wrapper around requireRole('admin').
  */
 export async function requireAdmin() {
   return requireRole("admin");

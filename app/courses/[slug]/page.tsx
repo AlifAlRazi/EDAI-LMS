@@ -10,6 +10,51 @@ import { Clock, Users, PlayCircle, BookOpen, CheckCircle, Lock } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import EnrollButton from "@/components/courses/EnrollButton";
+import type { Metadata } from "next";
+
+// ISR: rebuild this page at most every hour
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  try {
+    await connectDB();
+    const courses = await Course.find({ isPublished: true }).select("slug").lean() as any[];
+    return courses.map((c) => ({ slug: c.slug }));
+  } catch {
+    return [];
+  }
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  try {
+    await connectDB();
+    const course = await Course.findOne({ slug: params.slug }).select("title description category thumbnail price isFree").lean() as any;
+    if (!course) return { title: "Course Not Found | EdAI LMS" };
+
+    const price = course.isFree ? "Free" : course.price ? `$${(course.price / 100).toFixed(2)}` : "";
+    const description = `${course.description?.slice(0, 155) ?? "AI-powered personalized course"} ${price ? `— ${price}` : ""}`;
+
+    return {
+      title: `${course.title} | EdAI LMS`,
+      description,
+      openGraph: {
+        title: course.title,
+        description,
+        type: "article",
+        images: course.thumbnail ? [{ url: course.thumbnail, width: 1200, height: 630 }] : [],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: course.title,
+        description,
+        images: course.thumbnail ? [course.thumbnail] : [],
+      },
+    };
+  } catch {
+    return { title: "EdAI LMS" };
+  }
+}
+
 
 export default async function CourseDetailPage({ params }: { params: { slug: string } }) {
   await connectDB();

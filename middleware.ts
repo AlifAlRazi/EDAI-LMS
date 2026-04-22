@@ -9,26 +9,20 @@ import { NextResponse } from "next/server";
  * - /learn/*      → require authentication → redirect to /login
  * - /admin/*      → require authentication + role === 'admin' → redirect to /dashboard
  * - /api/admin/*  → require admin role → return 403 JSON
- *
- * Public routes (no protection):
- *   /, /courses, /courses/*, /login, /api/auth/*, /api/stripe/webhook
  */
 export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
 
-    // ── Admin route — check role ───────────────────────────────────────────────
-
+    // Admin route — check role
     if (pathname.startsWith("/admin")) {
       if (token?.role !== "admin") {
-        // Redirect non-admins to dashboard
         return NextResponse.redirect(new URL("/dashboard", req.url));
       }
     }
 
-    // ── Admin API routes — return 403 ─────────────────────────────────────────
-
+    // Admin API routes — return 403
     if (pathname.startsWith("/api/admin")) {
       if (token?.role !== "admin") {
         return NextResponse.json(
@@ -42,22 +36,31 @@ export default withAuth(
   },
   {
     callbacks: {
-      /**
-       * This callback runs before the middleware function.
-       * Return true to allow the request, false to redirect to signIn page.
-       */
       authorized({ token, req }) {
-        // TEMPORARY BYPASS: Allowing access to all routes so you can see the UI
+        const { pathname } = req.nextUrl;
+
+        const protectedPrefixes = [
+          "/dashboard",
+          "/learn",
+          "/admin",
+          "/api/admin",
+        ];
+
+        const isProtected = protectedPrefixes.some((prefix) =>
+          pathname.startsWith(prefix)
+        );
+
+        // Block access if the route is protected and no JWT token exists
+        if (isProtected && !token) {
+          return false;
+        }
+
         return true;
       },
     },
   }
 );
 
-/**
- * Matcher config — Next.js will only invoke this middleware for these paths.
- * Excludes static files, images, and NextAuth's own routes.
- */
 export const config = {
   matcher: [
     "/dashboard/:path*",

@@ -5,6 +5,8 @@ import { stripe } from "@/lib/stripe";
 import connectDB from "@/lib/mongodb";
 import Enrollment from "@/models/Enrollment";
 import Course from "@/models/Course";
+import User from "@/models/User";
+import { sendEnrollmentConfirmation } from "@/lib/email";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -38,7 +40,7 @@ export async function POST(req: Request) {
     });
 
     if (!existingEnrollment) {
-      await Enrollment.create({
+      const enrollment = await Enrollment.create({
         userId: session.metadata.userId,
         courseId: session.metadata.courseId,
         stripeSessionId: session.id,
@@ -50,6 +52,25 @@ export async function POST(req: Request) {
       await Course.findByIdAndUpdate(session.metadata.courseId, {
         $inc: { enrollmentCount: 1 },
       });
+
+      // Send enrollment confirmation email (non-blocking)
+      try {
+        const [user, course] = await Promise.all([
+          User.findById(session.metadata.userId).select("name email").lean() as any,
+          Course.findById(session.metadata.courseId).select("title slug thumbnail price isFree").lean() as any,
+        ]);
+
+        if (user && course) {
+          await sendEnrollmentConfirmation(
+            { name: user.name, email: user.email },
+            course,
+            { _id: enrollment._id.toString(), courseId: session.metadata.courseId }
+          );
+        }
+      } catch (emailErr) {
+        // Email failures should never break enrollment
+        console.error("[WEBHOOK_EMAIL_ERROR]", emailErr);
+      }
     }
   }
 
