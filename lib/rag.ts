@@ -4,7 +4,7 @@ import { nanoid } from "nanoid";
 import type { IQuestion } from "@/types";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || "dummy_key_for_build",
 });
 
 /**

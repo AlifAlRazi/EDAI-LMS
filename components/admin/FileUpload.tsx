@@ -20,7 +20,7 @@ export default function FileUpload({ onUpload, accept = "image", buttonLabel = "
   
   return (
     <CldUploadWidget
-      uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "ml_default"} 
+      uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "edai_uploads"} 
       options={{
         maxFiles: 1,
         resourceType: resourceType,

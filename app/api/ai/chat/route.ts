@@ -4,7 +4,7 @@ import { checkEnrollment } from "@/lib/check-enrollment";
 import { queryRAG } from "@/lib/rag";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "dummy_key_for_build" });
 
 export async function POST(req: Request) {
   try {
