@@ -107,27 +107,80 @@ export default function Hero() {
               </div>
 
               {/* Fake UI for visual appeal */}
-              <div className="flex-1 relative border border-white/5 rounded-xl bg-dark/50 overflow-hidden">
-                <svg className="absolute inset-0 w-full h-full opacity-60" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  {/* Edges */}
-                  <line x1="20" y1="50" x2="50" y2="20" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
-                  <line x1="20" y1="50" x2="50" y2="80" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
-                  <line x1="50" y1="20" x2="80" y2="50" stroke="rgba(124,58,237,0.4)" strokeWidth="0.8" strokeDasharray="2 1" />
+              <div className="flex-1 relative border border-white/5 rounded-xl bg-dark/50 overflow-hidden font-sans">
+                <svg className="absolute inset-0 w-full h-full opacity-60" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
                   
-                  {/* Nodes */}
-                  <circle cx="20" cy="50" r="4" fill="#3730a3" />
-                  <circle cx="50" cy="20" r="4" fill="#6d28d9" />
-                  <circle cx="50" cy="80" r="4" fill="#4f46e5" />
+                  {/* Edges - Background Network */}
+                  <line x1="50" y1="15" x2="20" y2="40" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+                  <line x1="50" y1="15" x2="80" y2="40" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+                  <line x1="20" y1="85" x2="20" y2="40" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+                  <line x1="20" y1="85" x2="80" y2="85" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+                  <line x1="80" y1="85" x2="80" y2="40" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
                   
-                  {/* Gap Node (Red/Accent) */}
-                  <circle cx="80" cy="50" r="5" fill="#ef4444" className="animate-pulse" />
-                  <circle cx="80" cy="50" r="8" fill="none" stroke="#ef4444" strokeWidth="0.5" className="animate-ping" />
+                  {/* Edges - Converging to Gap */}
+                  <line x1="20" y1="40" x2="50" y2="60" stroke="rgba(239,68,68,0.4)" strokeWidth="0.8" strokeDasharray="2 1" className="animate-pulse" />
+                  <line x1="80" y1="85" x2="50" y2="60" stroke="rgba(239,68,68,0.4)" strokeWidth="0.8" strokeDasharray="2 1" className="animate-pulse" />
+                  <line x1="80" y1="40" x2="50" y2="60" stroke="rgba(239,68,68,0.4)" strokeWidth="0.8" strokeDasharray="2 1" className="animate-pulse" />
+                  
+                  {/* Main Nodes */}
+                  <circle cx="50" cy="15" r="5" fill="#4f46e5" />
+                  <circle cx="20" cy="40" r="5" fill="#6d28d9" />
+                  <circle cx="80" cy="40" r="5" fill="#7c3aed" />
+                  <circle cx="20" cy="85" r="5" fill="#4338ca" />
+                  <circle cx="80" cy="85" r="5" fill="#5b21b6" />
+                  
+                  {/* Gap Node (Red/Accent) - Earthquake / Ping Effect */}
+                  <motion.circle 
+                    cx="50" cy="60" r="6" fill="#ef4444" 
+                    animate={{ 
+                      x: [0, -1, 1, -1, 1, 0], 
+                      y: [0, 1, -1, 1, -1, 0] 
+                    }}
+                    transition={{ 
+                      duration: 0.3, 
+                      repeat: Infinity, 
+                      repeatDelay: 1.5 
+                    }}
+                  />
+                  <motion.circle 
+                    cx="50" cy="60" r="10" fill="none" stroke="#ef4444" strokeWidth="0.5"
+                    style={{ transformOrigin: "50px 60px" }}
+                    animate={{ 
+                      scale: [1, 2], 
+                      opacity: [0.8, 0] 
+                    }}
+                    transition={{ 
+                      duration: 1.5, 
+                      repeat: Infinity, 
+                      ease: "easeOut" 
+                    }}
+                  />
                 </svg>
                 
-                {/* Floating labels */}
-                <div className="absolute top-[12%] left-[40%] text-[10px] text-white/70 bg-dark px-2 border border-white/10 rounded-full">Algebra</div>
-                <div className="absolute top-[44%] left-[10%] text-[10px] text-white/70 bg-dark px-2 border border-white/10 rounded-full">Basics</div>
-                <div className="absolute top-[42%] left-[72%] text-[10px] text-red-400 bg-red-500/10 px-2 border border-red-500/30 rounded-full font-semibold drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]">Gap Detected: Calculus</div>
+                {/* Floating Node Labels */}
+                <div className="absolute top-[8%] left-[50%] -translate-x-1/2 text-[10px] text-white/90 bg-dark px-2 py-0.5 border border-white/10 rounded font-medium shadow-lg">Artificial Intelligence</div>
+                <div className="absolute top-[33%] left-[20%] -translate-x-1/2 text-[10px] text-white/90 bg-dark px-2 py-0.5 border border-white/10 rounded font-medium shadow-lg">Machine Learning</div>
+                <div className="absolute top-[33%] left-[80%] -translate-x-1/2 text-[10px] text-white/90 bg-dark px-2 py-0.5 border border-white/10 rounded font-medium shadow-lg">RAG Architecture</div>
+                <div className="absolute top-[78%] left-[20%] -translate-x-1/2 text-[10px] text-white/90 bg-dark px-2 py-0.5 border border-white/10 rounded font-medium shadow-lg">Python</div>
+                <div className="absolute top-[78%] left-[80%] -translate-x-1/2 text-[10px] text-white/90 bg-dark px-2 py-0.5 border border-white/10 rounded font-medium shadow-lg">Neural Networks</div>
+                
+                {/* Gap Label */}
+                <motion.div 
+                  className="absolute top-[68%] left-[50%] -translate-x-1/2 text-[11px] text-red-400 bg-red-500/10 px-3 py-1 border border-red-500/30 rounded-full font-bold shadow-[0_0_15px_rgba(239,68,68,0.3)] whitespace-nowrap"
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  Gap Detected: Deep Learning
+                </motion.div>
+                
+                {/* Edge Relationship Labels (Simulating the user's screenshot) */}
+                <div className="absolute top-[28%] left-[35%] -translate-x-1/2 -translate-y-1/2 text-[7px] text-white/40 uppercase tracking-wider rotate-[-35deg]">Includes</div>
+                <div className="absolute top-[28%] left-[65%] -translate-x-1/2 -translate-y-1/2 text-[7px] text-white/40 uppercase tracking-wider rotate-[35deg]">Enables</div>
+                <div className="absolute top-[85%] left-[50%] -translate-x-1/2 -translate-y-1/2 text-[7px] text-white/40 uppercase tracking-wider">Foundation</div>
+                
+                <div className="absolute top-[50%] left-[35%] -translate-x-1/2 -translate-y-1/2 text-[7px] text-red-400/70 uppercase tracking-wider rotate-[35deg]">Missing Prereq</div>
+                <div className="absolute top-[50%] left-[65%] -translate-x-1/2 -translate-y-1/2 text-[7px] text-red-400/70 uppercase tracking-wider rotate-[-35deg]">Missing Prereq</div>
+
               </div>
 
             </motion.div>
