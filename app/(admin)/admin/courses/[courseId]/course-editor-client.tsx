@@ -24,10 +24,37 @@ export default function CourseEditorClient({ initialData }: { initialData: any }
   // DND State for modules
   const [modules, setModules] = useState<any[]>(initialData.modules || []);
 
-  const handleSave = async () => {
-    // In a real app we would POST to /api/courses/{courseId}
-    console.log("Saving course:", course, modules, nodes, edges);
-    alert("Course saved successfully!");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async (publishOverride?: boolean) => {
+    setIsSaving(true);
+    try {
+      const payload = {
+        ...course,
+        modules,
+        knowledgeNodes: nodes.map(n => ({ id: n.id, label: n.data.label, position: n.position })),
+      };
+      
+      if (typeof publishOverride === "boolean") {
+        payload.isPublished = publishOverride;
+      }
+
+      const res = await fetch(`/api/admin/courses/${course._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to save: ${errorText}`);
+      }
+      alert("Course saved successfully!");
+    } catch (err: any) {
+      console.error(err);
+      alert(`Error saving course: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const tabs = [
@@ -46,9 +73,9 @@ export default function CourseEditorClient({ initialData }: { initialData: any }
           </h1>
           <p className="text-sm text-white/50">{course.title || "Untitled Course"}</p>
         </div>
-        <Button onClick={handleSave} className="bg-primary-600 hover:bg-primary-500 text-white shadow-glow-violet">
+        <Button onClick={() => handleSave()} disabled={isSaving} className="bg-primary-600 hover:bg-primary-500 text-white shadow-glow-violet">
           <Save className="w-4 h-4 mr-2" />
-          Save Changes
+          {isSaving ? "Saving..." : "Save Changes"}
         </Button>
       </div>
 
@@ -168,13 +195,41 @@ export default function CourseEditorClient({ initialData }: { initialData: any }
                             </div>
                             <div className="p-4 space-y-2">
                               {mod.lessons?.length > 0 ? mod.lessons.map((lesson: any) => (
-                                <div key={lesson.id} className="p-3 bg-white/5 rounded-lg text-sm text-white flex items-center gap-2">
-                                  <Play className="w-4 h-4 text-primary-400" /> {lesson.title}
+                                <div key={lesson.id} className="p-3 bg-white/5 rounded-lg text-sm text-white flex items-center justify-between gap-2 group">
+                                  <div className="flex items-center gap-2">
+                                    <Play className="w-4 h-4 text-primary-400" /> 
+                                    <span className="truncate max-w-[200px]">{lesson.title}</span>
+                                  </div>
+                                  {(lesson.content || lesson.videoUrl) && (
+                                    <a 
+                                      href={lesson.content || lesson.videoUrl} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-xs px-2 py-1 bg-white/10 rounded hover:bg-white/20 transition-colors opacity-0 group-hover:opacity-100"
+                                    >
+                                      Preview File
+                                    </a>
+                                  )}
                                 </div>
                               )) : (
                                 <p className="text-xs text-white/40 italic">No lessons. Drag files or click add.</p>
                               )}
-                              <FileUpload accept="raw" buttonLabel="Upload PDF / Text (RAG)" className="w-full mt-4 bg-white/[0.02]" onUpload={() => {}} />
+                              <FileUpload 
+                                accept="raw" 
+                                buttonLabel="Upload PDF / Text (RAG)" 
+                                className="w-full mt-4 bg-white/[0.02]" 
+                                onUpload={(url, publicId) => {
+                                  const newLesson = {
+                                    id: `lesson-${Date.now()}`,
+                                    title: `Document: ${publicId.split('/').pop()}`,
+                                    type: "document",
+                                    content: url,
+                                  };
+                                  const newModules = [...modules];
+                                  newModules[index].lessons = [...(newModules[index].lessons || []), newLesson];
+                                  setModules(newModules);
+                                }} 
+                              />
                             </div>
                           </div>
                         )}
@@ -216,22 +271,54 @@ export default function CourseEditorClient({ initialData }: { initialData: any }
         {/* PUBLISH TAB */}
         {activeTab === "publish" && (
           <div className="max-w-xl text-center mx-auto mt-20 space-y-6">
-            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto border border-green-500/20">
-              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse-glow" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Ready to Publish?</h2>
-              <p className="text-white/50 text-sm">
-                Publishing this course will construct the Pinecone RAG Index, create the EdAI Graph, and generate a Stripe Checkout integration for purchasing.
-              </p>
-            </div>
-            <Button
-              size="lg"
-              onClick={() => setCourse({ ...course, isPublished: true })}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold h-14 text-lg"
-            >
-              🚀 Publish to Live Environment
-            </Button>
+            {course.isPublished ? (
+              <>
+                <div className="w-20 h-20 bg-primary-500/10 rounded-full flex items-center justify-center mx-auto border border-primary-500/20">
+                  <div className="w-3 h-3 bg-primary-400 rounded-full animate-pulse" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-2">Course is Live!</h2>
+                  <p className="text-white/50 text-sm">
+                    This course is currently published and visible to students. Pinecone and Stripe integrations are active.
+                  </p>
+                </div>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  disabled={isSaving}
+                  onClick={() => {
+                    setCourse({ ...course, isPublished: false });
+                    handleSave(false);
+                  }}
+                  className="w-full border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-300 font-bold h-14 text-lg"
+                >
+                  {isSaving ? "Updating..." : "⏸ Unpublish Course"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto border border-green-500/20">
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse-glow" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-2">Ready to Publish?</h2>
+                  <p className="text-white/50 text-sm">
+                    Publishing this course will construct the Pinecone RAG Index, create the EdAI Graph, and generate a Stripe Checkout integration for purchasing.
+                  </p>
+                </div>
+                <Button
+                  size="lg"
+                  disabled={isSaving}
+                  onClick={() => {
+                    setCourse({ ...course, isPublished: true });
+                    handleSave(true);
+                  }}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold h-14 text-lg"
+                >
+                  {isSaving ? "Publishing..." : "🚀 Publish to Live Environment"}
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>

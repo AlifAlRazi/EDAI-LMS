@@ -18,8 +18,8 @@ export interface ICourseDocument extends Document {
   category: string;
   level: CourseLevel;
   prerequisites: CoursePrerequisite[];
-  knowledgeNodes: string[];
-  modules: mongoose.Types.ObjectId[];
+  knowledgeNodes: any[];
+  modules: any[];
   totalDuration: number;
   enrollmentCount: number;
   isPublished: boolean;
@@ -100,15 +100,13 @@ const CourseSchema = new Schema<ICourseDocument>(
       default: [],
     },
     knowledgeNodes: {
-      type: [String],
+      type: [Object],
       default: [],
     },
-    modules: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Module",
-      },
-    ],
+    modules: {
+      type: [Object],
+      default: [],
+    },
     totalDuration: {
       type: Number,
       default: 0,
@@ -151,7 +149,7 @@ const CourseSchema = new Schema<ICourseDocument>(
 // ─── Virtuals ─────────────────────────────────────────────────────────────────
 
 /** Formatted price in dollars (price is stored in cents) */
-CourseSchema.virtual("priceFormatted").get(function () {
+CourseSchema.virtual("priceFormatted").get(function (this: ICourseDocument) {
   return this.isFree ? "Free" : `$${(this.price / 100).toFixed(2)}`;
 });
 
@@ -169,8 +167,7 @@ CourseSchema.index({ title: "text", description: "text", tags: "text" });
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 
-const Course: Model<ICourseDocument> =
-  mongoose.models.Course ??
-  mongoose.model<ICourseDocument>("Course", CourseSchema);
+delete mongoose.models.Course;
+const Course: Model<ICourseDocument> = mongoose.model<ICourseDocument>("Course", CourseSchema);
 
 export default Course;

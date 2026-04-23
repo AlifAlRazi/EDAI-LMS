@@ -118,17 +118,38 @@ export default function LearningClient({ course, activeLesson, completedLessonId
             {/* Lesson content */}
             <div className="aspect-video w-full bg-black rounded-xl border border-white/10 overflow-hidden flex items-center justify-center relative group shadow-2xl">
               {activeLesson.type === "video" ? (
-                <>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
-                  <PlayCircle className="w-16 h-16 text-white/80 z-20 group-hover:scale-110 transition-transform cursor-pointer" />
-                  <span className="absolute bottom-4 left-4 z-20 font-medium text-white text-lg">{activeLesson.title}</span>
-                </>
+                activeLesson.videoUrl ? (
+                  <video 
+                    src={activeLesson.videoUrl} 
+                    controls 
+                    className="w-full h-full object-cover"
+                    controlsList="nodownload"
+                  >
+                    Your browser does not support HTML video.
+                  </video>
+                ) : (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
+                    <PlayCircle className="w-16 h-16 text-white/80 z-20 group-hover:scale-110 transition-transform cursor-pointer" />
+                    <span className="absolute bottom-4 left-4 z-20 font-medium text-white text-lg">{activeLesson.title}</span>
+                  </>
+                )
               ) : (
-                <div className="p-12 text-white/80 h-full w-full bg-dark-100 overflow-y-auto">
-                  <h1 className="text-3xl font-bold mb-6 font-heading">{activeLesson.title}</h1>
-                  <article className="prose prose-invert max-w-none font-sans">
-                    <p>{activeLesson.content || "Lesson content will appear here once uploaded by your instructor."}</p>
-                  </article>
+                <div className="h-full w-full bg-dark-100 overflow-hidden relative">
+                  {activeLesson.content?.startsWith("http") ? (
+                    <iframe 
+                      src={activeLesson.content} 
+                      className="w-full h-full border-0"
+                      title={activeLesson.title}
+                    />
+                  ) : (
+                    <div className="p-12 overflow-y-auto h-full w-full">
+                      <h1 className="text-3xl font-bold mb-6 font-heading">{activeLesson.title}</h1>
+                      <article className="prose prose-invert max-w-none font-sans">
+                        <p>{activeLesson.content || "Lesson content will appear here once uploaded by your instructor."}</p>
+                      </article>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

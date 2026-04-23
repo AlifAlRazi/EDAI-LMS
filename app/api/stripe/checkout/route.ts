@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       price: course.price,
       courseTitle: course.title,
       courseThumbnail: course.thumbnail,
-      successUrl: `${process.env.NEXTAUTH_URL}/learn/${course._id}/quiz/diagnostic`,
+      successUrl: `${process.env.NEXTAUTH_URL}/api/stripe/checkout/success?session_id={CHECKOUT_SESSION_ID}&course_id=${course._id}`,
       cancelUrl: `${process.env.NEXTAUTH_URL}/courses/${course.slug}`,
       customerEmail: session.user.email,
     });

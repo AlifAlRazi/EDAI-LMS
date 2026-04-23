@@ -128,22 +128,28 @@ export async function generateAdaptiveQuestion(params: AdaptiveQuestionParams): 
     .join("\n\n");
 
   // 2. Instruct GPT-4o to generate structured JSON output
-  const systemPrompt = `You are an expert educator producing assessment material.
-Generate a single multiple-choice question testing the student's knowledge on: "${topic}".
+  const systemPrompt = `You are a strict, expert university professor creating a rigorous assessment.
+Generate a single multiple-choice question deeply testing the student's conceptual mastery of: "${topic}".
 Difficulty level: ${difficulty}.
+
+CRITICAL INSTRUCTIONS:
+1. Do NOT make lame, obvious, or generic questions.
+2. The question MUST be highly specific to the course material provided.
+3. Require the student to apply knowledge, solve a problem, or demonstrate deep understanding, rather than just reciting a definition.
+4. If the course material context is missing or generic, invent a highly realistic, challenging scenario related to "${topic}".
 
 Use the following course material as context to ensure accuracy and relevance:
 ---
-${contextText || "[No specific course context found. Use general knowledge.]"}
+${contextText || "[No specific course context found. Rely entirely on advanced academic knowledge of the topic.]"}
 ---
 
 You MUST respond with ONLY valid JSON matching this exact structure:
 {
-  "questionText": "The text of the question",
+  "questionText": "The text of the highly challenging question",
   "type": "mcq",
-  "options": ["Option A", "Option B", "Option C", "Option D"],
+  "options": ["Plausible Distractor A", "Plausible Distractor B", "Plausible Distractor C", "Correct Answer"],
   "correctAnswer": "The exact string from options that is correct",
-  "explanation": "Why this answer is correct and others are wrong"
+  "explanation": "Detailed academic explanation of why this answer is correct and others are fundamentally flawed"
 }`;
 
   const completion = await openai.chat.completions.create({

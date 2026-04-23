@@ -170,8 +170,10 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                     <div className="divide-y divide-white/5">
                       {mod.lessons?.map((lesson: any, lesIdx: number) => {
                         const isPreviewable = !isEnrolled && modIdx === 0 && lesIdx === 0;
-                        return (
-                          <div key={lesIdx} className="p-4 pl-6 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                        const canAccess = isPreviewable || isEnrolled;
+                        
+                        const LessonContent = (
+                          <div className={`p-4 pl-6 flex items-center justify-between transition-colors ${canAccess ? "hover:bg-white/[0.05] cursor-pointer" : "hover:bg-white/[0.02] cursor-not-allowed"}`}>
                             <div className="flex items-center gap-3">
                               {isPreviewable ? (
                                 <PlayCircle className="w-4 h-4 text-primary-400" />
@@ -180,7 +182,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                               ) : (
                                 <Lock className="w-4 h-4 text-white/20" />
                               )}
-                              <span className={`text-sm ${isPreviewable || isEnrolled ? "text-white/80" : "text-white/50"}`}>
+                              <span className={`text-sm ${canAccess ? "text-white/80" : "text-white/50"}`}>
                                 {lesson.title}
                               </span>
                             </div>
@@ -188,6 +190,14 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                               <Badge variant="outline" className="text-xs border-primary-500/30 text-primary-300">Preview</Badge>
                             )}
                           </div>
+                        );
+
+                        return canAccess ? (
+                          <Link key={lesIdx} href={`/learn/${course._id.toString()}/${lesson.id || lesson._id?.toString()}`}>
+                            {LessonContent}
+                          </Link>
+                        ) : (
+                          <div key={lesIdx}>{LessonContent}</div>
                         );
                       })}
                     </div>

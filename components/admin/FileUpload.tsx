@@ -23,17 +23,19 @@ export default function FileUpload({ onUpload, accept = "image", buttonLabel = "
       uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "edai_uploads"} 
       options={{
         maxFiles: 1,
-        resourceType: resourceType,
+        resourceType: "auto",
         clientAllowedFormats: accept === "image" ? ["png", "jpeg", "jpg", "webp"] 
                             : accept === "video" ? ["mp4", "webm"] 
-                            : ["pdf", "doc", "docx"],
+                            : ["pdf", "doc", "docx", "txt"],
       }}
       onSuccess={(result, { widget }) => {
         if (result?.info && typeof result.info !== "string") {
           onUpload(result.info.secure_url, result.info.public_id, result.info.resource_type);
           setIsSuccess(true);
-          setTimeout(() => setIsSuccess(false), 3000);
-          widget.close();
+          setTimeout(() => {
+            setIsSuccess(false);
+            if (widget && widget.close) widget.close();
+          }, 1500);
         }
       }}
     >

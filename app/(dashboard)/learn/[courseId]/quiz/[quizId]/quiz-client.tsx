@@ -28,25 +28,32 @@ export default function QuizClient({ courseId, quiz, pastResult }: any) {
   };
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-    // Simulate API call — in production this POSTs to /api/quiz/diagnostic
-    await new Promise((r) => setTimeout(r, 1500));
-    setResults({
-      score: 52,
-      totalQuestions: questions.length,
-      gapNodes: ["graph-theory", "vector-embeddings"],
-      strongNodes: ["ml-basics"],
-      recommendedPath: [
-        "Introduction to Graph Theory",
-        "Vector Embeddings Deep Dive",
-        "Building Knowledge Graphs",
-        "Practical RAG Systems",
-      ],
-      explanation:
-        "You showed strong understanding of ML basics, but struggled with graph relationships and vector embeddings. I've built a path that reinforces these foundations before moving into advanced RAG architectures.",
-    });
-    setIsSubmitting(false);
-    setCurrentIdx(questions.length);
+    try {
+      setIsSubmitting(true);
+      
+      const res = await fetch("/api/quiz/diagnostic/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          courseId,
+          quizId: quiz._id === "diagnostic" ? "diagnostic" : quiz._id,
+          answers,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to submit quiz");
+      }
+
+      const data = await res.json();
+      setResults(data);
+    } catch (error) {
+      console.error("Error submitting quiz:", error);
+      alert("Failed to grade quiz. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+      setCurrentIdx(questions.length);
+    }
   };
 
   // Show the rich GapAnalysisResult once finished
