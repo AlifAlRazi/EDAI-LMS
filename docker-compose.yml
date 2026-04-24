@@ -1,0 +1,32 @@
+services:
+  # 1. Database Service (MongoDB)
+  mongodb:
+    image: mongo:latest
+    container_name: edai-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: always
+
+  # 2. Application Service (Next.js)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: edai-app
+    ports:
+      - "3000:3000"
+    # This pulls in your existing secrets from .env.local
+    env_file:
+      - .env.local
+    environment:
+      # We removed the local override so it uses your Atlas URI from .env.local
+      - NODE_ENV=production
+    depends_on:
+      - mongodb
+    restart: always
+
+# This ensures your data stays safe even if the container stops
+volumes:
+  mongodb_data:

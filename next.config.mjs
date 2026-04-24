@@ -25,6 +25,8 @@ const nextConfig = {
   compress: true,
   // Powered by header removal
   poweredByHeader: false,
+  // Standalone output for Docker
+  output: 'standalone',
 };
 
 export default nextConfig;
