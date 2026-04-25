@@ -1,4 +1,4 @@
-name: Docker Build Test
+name: Docker Build and Push to Azure
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "main", "master" ]
 
 jobs:
-  build-and-test:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,19 +15,25 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Set up Docker Buildx (allows for advanced build features)
+      # 2. Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 3. Build the Docker Image
-      # This will run your Dockerfile just like it does on your computer.
-      # It ensures your code is always "buildable".
-      - name: Build Docker Image
+      # 3. Log in to Azure Container Registry
+      # It uses the secrets you will add to GitHub settings
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: edailmsregistry.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      # 4. Build and Push the Docker Image
+      # This time 'push' is set to true!
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          push: false # We set this to false for now until you have a registry (like Docker Hub)
-          tags: edai-lms:latest
-          # We don't need real secrets here because our Dockerfile 
-          # uses those "dummy" values we added for the build phase!
+          push: true
+          tags: edailmsregistry.azurecr.io/edai-lms:latest
