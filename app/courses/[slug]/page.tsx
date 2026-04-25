@@ -12,18 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import EnrollButton from "@/components/courses/EnrollButton";
 import type { Metadata } from "next";
 
-// ISR: rebuild this page at most every hour
-export const revalidate = 3600;
-
-export async function generateStaticParams() {
-  try {
-    await connectDB();
-    const courses = await Course.find({ isPublished: true }).select("slug").lean() as any[];
-    return courses.map((c) => ({ slug: c.slug }));
-  } catch {
-    return [];
-  }
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   try {
