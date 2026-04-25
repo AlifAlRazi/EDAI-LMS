@@ -27,6 +27,7 @@ jobs:
           login-server: edailmsregistry.azurecr.io
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
+          
 
       # 4. Build and Push the Docker Image
       # This time 'push' is set to true!
