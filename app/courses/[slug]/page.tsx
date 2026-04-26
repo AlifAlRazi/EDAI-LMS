@@ -10,9 +10,10 @@ import { Clock, Users, PlayCircle, BookOpen, CheckCircle, Lock } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import EnrollButton from "@/components/courses/EnrollButton";
-import type { Metadata } from "next";
+import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   try {
@@ -46,6 +47,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 
 export default async function CourseDetailPage({ params }: { params: { slug: string } }) {
+  headers(); // Force dynamic execution
   await connectDB();
   const session = await getSession();
 

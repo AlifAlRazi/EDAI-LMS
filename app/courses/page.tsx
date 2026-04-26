@@ -8,9 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
+import { headers } from "next/headers";
+
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export default async function CourseCatalogPage() {
+  headers(); // Force dynamic execution
   await connectDB();
 
   // In a real app we would add pagination and dynamic filtering using searchParams
